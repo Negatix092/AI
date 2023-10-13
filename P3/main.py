@@ -321,3 +321,5 @@ if __name__ == '__main__':
     print(heurist_BD([[6, 5, 1],
                       [4, 2, 3],
                       [0, 8, 7]], MATRIX, lista))
+
+
