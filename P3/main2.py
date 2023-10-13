@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 from copy import deepcopy
+from queue import PriorityQueue  # Import PriorityQueue
 
 DIRECTIONS = {"UP": [-1, 0], "DOWN": [1, 0], "LEFT": [0, -1], "RIGHT": [0, 1]}
 Matrix1 = [1, 2, 3, 4, 0, 0, 0, 0, 0]
@@ -20,17 +20,6 @@ class Node:
         return self.g + self.h
 
 
-# heuristic DB
-#def DB(a, b, costList, i):
-#    cost = 0
-#    for row in range(len(a)):
-#       for col in range(len(a[0])):
-#            pos = getPos(b, a[row][col])
-#            cost += abs(row - pos[0]) + abs(col - pos[1])
-
-#    cost = cost + costList[i]
-#    return cost
-
 def DB(a, b, costList, i):
     cost = 0
     for num in a:
@@ -42,18 +31,6 @@ def DB(a, b, costList, i):
     return cost
 
 
-# the heuristic used is the manhattan distance
-#def MHD(a, b, file, file2):
-#    file.write(str(a) + '\n')
-
-#    cost = 0
-#    for row in range(len(a)):
-#        for col in range(len(a[0])):
-#            pos = getPos(b, a[row][col])
-#            cost += abs(row - pos[0]) + abs(col - pos[1])
-#    file2.write(str(cost) + '\n')
-
-#    return cost
 def MHD(a, b, file, file2):
     file.write(str(a) + '\n')
     cost = 0
@@ -80,30 +57,9 @@ def getBestNode(openSet):
     return bestNode
 
 
-# get position of an element in an array
-#def getPos(state, elem):
-#    for row in range(len(state)):
-#        if elem in state[row]:
-#            return (row, state[row].index(elem))
-
 def getPos(state, elem):
     return state.index(elem)
 
-
-# returns all the adjacent nodes that are valid positions
-#def getAdjNode(node, MATRIX, file, file2):
-#    listNode = []
-#    emptyPos = getPos(node.state, 0)
-
-#    for dir in DIRECTIONS.keys():
-#        newPos = (emptyPos[0] + DIRECTIONS[dir][0], emptyPos[1] + DIRECTIONS[dir][1])
-#        if 0 <= newPos[0] < len(node.state) and 0 <= newPos[1] < len(node.state[0]):
-#            newState = deepcopy(node.state)
-#            newState[emptyPos[0]][emptyPos[1]] = node.state[newPos[0]][newPos[1]]
-#            newState[newPos[0]][newPos[1]] = 0
-#            listNode += [Node(newState, node.state, node.g + 1, MHD(newState, MATRIX, file, file2), dir)]
-#    # print(emptyPos)
-#    return listNode
 
 def getAdjNode(node, MATRIX, file, file2):
     listNode = []
@@ -132,21 +88,6 @@ def getAdjNode(node, MATRIX, file, file2):
     return listNode
 
 
-#def getAdjNodeBD(node, MATRIX, costList, maxi):
-#    listNode = []
-#    emptyPos = getPos(node.state, 0)
-#
-#    for dir in DIRECTIONS.keys():
-#        newPos = (emptyPos[0] + DIRECTIONS[dir][0], emptyPos[1] + DIRECTIONS[dir][1])
-#        if 0 <= newPos[0] < len(node.state) and 0 <= newPos[1] < len(node.state[0]):
-#            newState = deepcopy(node.state)
-#            newState[emptyPos[0]][emptyPos[1]] = node.state[newPos[0]][newPos[1]]
-#            newState[newPos[0]][newPos[1]] = 0
-#            listNode += [Node(newState, node.state, node.g + 1, DB(newState, MATRIX, costList, maxi - 6), dir)]
-#
-#    # print(emptyPos)
-#    return listNode
-
 def getAdjNodeBD(node, MATRIX, costList, maxi):
     listNode = []
     emptyPos = getPos(node.state, 0)
@@ -165,19 +106,6 @@ def getAdjNodeBD(node, MATRIX, costList, maxi):
     return listNode
 
 
-# build the resulting path from the closedSet
-#def buildPath(closedSet, MATRIX):
-#    node = closedSet[str(MATRIX)]
-#    # path = ""
-#    path = []
-#    while node.dir:
-#        # path = node.dir + path
-#        path.append(node.dir)
-#        node = closedSet[str(node.previous)]
-#
-#    return path
-
-
 def buildPath(closedSet, MATRIX):
     node = closedSet[str(MATRIX)]
     path = []
@@ -192,12 +120,61 @@ def buildPath(closedSet, MATRIX):
 
     return path[::-1]  # Reverse the path to get the correct order
 
+def cost_calculate(state, cuttedboard, goal):
+    cost = 0
+    for number in cuttedboard:
+        if number != 0:
+            cost += abs(cuttedboard.index(number) % 3 - state.index(number) % 3) + abs(
+                cuttedboard.index(number) // 3 - state.index(number) // 3
+            )
+    return cost
 
-# implementation of the A* algorithm for best first path
-def juego(puzzle, MATRIX, nombre):
+def generate_pattern_database(start_state, goal, txt):
+    pdb_entries = {}  # Dictionary to store pattern database entries
+
+    # Define a priority queue for A* search
+    pq = PriorityQueue()
+    start_state_tuple = tuple(start_state)
+    initial_cost = cost_calculate(start_state_tuple, start_state, goal)
+    pq.put((initial_cost, start_state_tuple))
+
+    while not pq.empty():
+        cost, current_state = pq.get()
+        pdb_entries[current_state] = cost
+
+        # Generate possible next states
+        zero_index = current_state.index(0)
+        row, col = zero_index // 3, zero_index % 3
+        possible_moves = [
+            (row - 1, col),
+            (row + 1, col),
+            (row, col - 1),
+            (row, col + 1),
+        ]
+
+        for move_row, move_col in possible_moves:
+            if 0 <= move_row < 3 and 0 <= move_col < 3:
+                new_state = list(current_state)
+                new_zero_index = move_row * 3 + move_col
+                new_state[zero_index], new_state[new_zero_index] = (
+                    new_state[new_zero_index],
+                    new_state[zero_index],
+                )
+                new_state_tuple = tuple(new_state)
+                if new_state_tuple not in pdb_entries:
+                    new_cost = cost_calculate(new_state_tuple, start_state, goal)
+                    pq.put((new_cost, new_state_tuple))
+
+    # Write the pattern database entries to a file
+    with open(txt, "w") as file:
+        for state, cost in pdb_entries.items():
+            file.write(f"{state}, {cost}\n")
+
+
+def juego(puzzle, MATRIX, nombre, pattern_database):
     file = open('DB - ' + nombre + '.txt', 'w')
     file2 = open('Cost - ' + nombre + '.txt', 'w')
-    # add the start node
+    
     maxi = 0
     openSet = {str(puzzle): Node(puzzle, puzzle, 0, MHD(puzzle, MATRIX, file, file2), "")}
     closedSet = {}
@@ -214,24 +191,22 @@ def juego(puzzle, MATRIX, nombre):
             file.close()
             file2.close()
             return buildPath(closedSet, MATRIX)[::-1]
+        
         adj = getAdjNode(examNode, MATRIX, file, file2)
-
-
-        # update the closed set
+        
+        # Update the closed set
         for node in adj:
-            # print('adj', node.state)
-            if str(node.state) in closedSet.keys() or str(node.state) in openSet.keys() and openSet[
-                str(node.state)].f() < node.f():
+            if str(node.state) in closedSet.keys() or str(node.state) in openSet.keys() and openSet[str(node.state)].f() < node.f():
                 maxi += 1
                 continue
-
             openSet[str(node.state)] = node
-
-        # remove the examined node from the openSet
+        
+        # Remove the examined node from the openSet
         del openSet[str(examNode.state)]
 
-    # if there is no solution return the empty string
+    # If there is no solution, return the empty string
     return "No Solution"
+
 
 
 def heurist_BD(puzzle, MATRIX, costList):
@@ -289,37 +264,9 @@ def suma_costos(costos1, costos2):
     return sum_costos
 
 
-if __name__ == '__main__':
-    lista = []
-    cos1 = []
-    cos2 = []
 
-    print('Complete board state:  (4, 5, 1, 6, 8, 7, 3, 2, 0)')
-    print('Matrix 1: ')
-    juego([[4, 0, 1],
-           [0, 0, 0],
-           [3, 2, 0]], Matrix1, '1 - (4, 5, 1, 6, 8, 7, 3, 2, 0)')
 
-    print()
-    print('Matrix 2: ')
-    juego([[0, 5, 0],
-           [6, 8, 7],
-           [0, 0, 0]], Matrix2, '2 - (4, 5, 1, 6, 8, 7, 3, 2, 0)')
 
-    print()
-    print('Manhattan Heuristic: ')
-    print(juego([[4, 5, 1],
-                 [6, 8, 7],
-                 [3, 2, 0]], MATRIX, '3 - (4, 5, 1, 6, 8, 7, 3, 2, 0)'))
-    print()
-    print('DB Heuristic: ')
-    cos1 = lectura_bd('1 - (4, 5, 1, 6, 8, 7, 3, 2, 0)')
-    cos2 = lectura_bd('2 - (4, 5, 1, 6, 8, 7, 3, 2, 0)')
-
-    lista = suma_costos(cos1, cos2)
-    print(heurist_BD([[4, 5, 1],
-                      [6, 8, 7],
-                      [3, 2, 0]], MATRIX, lista))
         
 
 

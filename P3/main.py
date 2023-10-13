@@ -11,7 +11,7 @@ class Node:
     def __init__(self, state, previous, g, h, dir):
         self.state = state
         self.previous = previous
-        self.g = g  # cost from the starting position
+        self.g = g  # cost from the starting positionw
         self.h = h  # cost to the end position (heuristic)
         self.dir = dir  # direction as a string
 
