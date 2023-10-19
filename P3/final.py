@@ -42,15 +42,15 @@ def DB(a, b, costos, i):
 
 
 # la heurística utilizada es la distancia de Manhattan
-def MHD(a, b, archivo1, archivo2):
-    archivo1.write(str(a) + '\n')
+def MHD(a, b, file, file2):
+    file.write(str(a) + '\n')
 
     costo = 0
     for fila in range(3):
         for col in range(3):
             pos = getPos(b, a[3 * fila + col])
             costo += abs(fila - pos[0]) + abs(col - pos[1])
-    archivo2.write(str(costo) + '\n')
+    file2.write(str(costo) + '\n')
 
     return costo
 
@@ -85,7 +85,7 @@ def getNodosAdyacentes(nodo, MATRIZ, archivo1, archivo2, conjuntoExpandido):
     for dir in DIRECTIONS.keys():
         nuevaPos = (posVacia[0] + DIRECTIONS[dir][0], posVacia[1] + DIRECTIONS[dir][1])
         if 0 <= nuevaPos[0] < 3 and 0 <= nuevaPos[1] < 3:
-            nuevoEstado = deepcopy(nodo.estado)
+            nuevoEstado = list(deepcopy(nodo.estado))
             indice_vacio = nuevoEstado.index(0)
             nuevo_indice_vacio = 3 * nuevaPos[0] + nuevaPos[1]
             nuevoEstado[indice_vacio], nuevoEstado[nuevo_indice_vacio] = nuevoEstado[nuevo_indice_vacio], nuevoEstado[indice_vacio]
@@ -103,7 +103,7 @@ def getNodosAdyacentesBD(nodo, MATRIZ, costos, maxi):
     for dir in DIRECTIONS.keys():
         nuevaPos = (posVacia[0] + DIRECTIONS[dir][0], posVacia[1] + DIRECTIONS[dir][1])
         if 0 <= nuevaPos[0] < 3 and 0 <= nuevaPos[1] < 3:
-            nuevoEstado = deepcopy(nodo.estado)
+            nuevoEstado = list(deepcopy(nodo.estado))
             indice_vacio = nuevoEstado.index(0)
             nuevo_indice_vacio = 3 * nuevaPos[0] + nuevaPos[1]
             nuevoEstado[indice_vacio], nuevoEstado[nuevo_indice_vacio] = nuevoEstado[nuevo_indice_vacio], nuevoEstado[indice_vacio]
@@ -127,11 +127,11 @@ def construirCamino(conjuntoCerrado, MATRIZ):
 # implementación del algoritmo A* para la mejor ruta
 def juego(puzzle, MATRIZ, nombre):
 
-    archivo1 = open('base de datos: ' + nombre + '.txt', 'w')
-    archivo2 = open('costos: ' + nombre + '.txt', 'w')
+    file = open('DB - ' + nombre + '.txt', 'w')
+    file2 = open('Cost - ' + nombre + '.txt', 'w')
     # agregar el nodo de inicio
     maxi = 0
-    openSet = {str(puzzle): Nodo(puzzle, puzzle, 0, MHD(puzzle, MATRIZ, archivo1, archivo2), "")}
+    openSet = {str(puzzle): Nodo(puzzle, puzzle, 0, MHD(puzzle, MATRIZ, file, file2), "")}
     conjuntoCerrado = {}
     conjuntoExpandido = set()  # Inicializar conjuntoExpandido aquí
 
@@ -146,11 +146,11 @@ def juego(puzzle, MATRIZ, nombre):
             print('Número de nodos expandidos: ' + str(len(conjuntoExpandido)))  # Imprimir el tamaño de conjuntoExpandido
             print('Costo del camino: ' + str(len(construirCamino(conjuntoCerrado, MATRIZ))))
 
-            archivo1.close()
-            archivo2.close()
+            file.close()
+            file2.close()
             return construirCamino(conjuntoCerrado, MATRIZ)[::-1]
 
-        nodos_adyacentes = getNodosAdyacentes(nodoExaminado, MATRIZ, archivo1, archivo2, conjuntoExpandido)
+        nodos_adyacentes = getNodosAdyacentes(nodoExaminado, MATRIZ, file, file2, conjuntoExpandido)
 
         # Actualizar conjuntoCerrado y conjuntoExpandido
         for nodo in nodos_adyacentes:
@@ -199,10 +199,10 @@ def heurist_BD(puzzle, MATRIZ, costos):
 
 
 def lectura_bd(nombre):
-    archivo = open('Cost - ' + nombre + '.txt', 'r')
-    costos = archivo.readlines()
+    file = open('Cost - ' + nombre + '.txt', 'r')
+    costos = file.readlines()
 
-    archivo.close()
+    file.close()
     return costos
 
 
@@ -244,26 +244,42 @@ if __name__ == '__main__':
     cos1 = []
     cos2 = []
 
-    print('Estado completo del tablero:   (3, 1, 0, 8, 4, 2, 5, 6, 7)')
+    # setting an initial state
+    initial_state = [3, 1, 0, 8, 4, 2, 5, 6, 7]
 
-    if es_solucionable(MATRIZ):
-        print('Tablero 1: ')
-        juego([3, 1, 0, -1, 4, 2, -1, -1, -1], Matrix1, '1 - (3, 1, 0, 8, 4, 2, 5, 6, 7)')
+    # Creating the modified versions of the board state
+    modified_state_1 = [-1 if i not in [1,2,3,4,0] else i for i in initial_state]
+    modified_state_2 = [-1 if i not in [5,6,7,8,0] else i for i in initial_state]
+
+    # casting the initial_state to string
+    initial_state_str = str(initial_state)
+
+    i_1 = '1 - ' + initial_state_str
+    i_2 = '2 - ' + initial_state_str
+    i_3 = '3 - ' + initial_state_str
+
+    print('Estado completo del tablero:  ' + initial_state_str)
+
+    if es_solucionable(initial_state):
+        print('Tablero 1: Primera mitad del tablero')
+        print(modified_state_1)
+        juego(modified_state_1, Matrix1, i_1)
 
         print()
-        print('Tablero 2: ')
-        juego([-1, -1, 0, 8, -1, -1, 5, 6, 7], Matrix2, '2 - (3, 1, 0, 8, 4, 2, 5, 6, 7)')
+        print('Tablero 2: Segunda mitad del tablero')
+        print(modified_state_2)
+        juego(modified_state_2, Matrix2, i_2)
 
         print()
         print('Heurística de Manhattan: ')
-        print(juego([3, 1, 0, 8, 4, 2, 5, 6, 7], MATRIZ, '3 - (3, 1, 0, 8, 4, 2, 5, 6, 7)'))
+        print(juego(initial_state, MATRIZ, i_3))
         print()
         print('Heurística DB: ')
-        cos1 = lectura_bd('1 - (3, 1, 0, 8, 4, 2, 5, 6, 7)')
-        cos2 = lectura_bd('2 - (3, 1, 0, 8, 4, 2, 5, 6, 7)')
+        cos1 = lectura_bd(i_1)
+        cos2 = lectura_bd(i_2)
 
         lista = suma_costos(cos1, cos2)
-        print(heurist_BD([3, 1, 0, 8, 4, 2, 5, 6, 7], MATRIZ, lista))
+        print(heurist_BD(initial_state, MATRIZ, lista))
     else:
         print("El estado completo del tablero no es solucionable.")
 
