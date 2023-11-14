@@ -112,3 +112,37 @@ if hof.items:
     print("******************")
 else:
     print("The Hall of Fame is empty. No best individual found.")
+
+
+
+# Hall of Fame para la versión sin elitismo
+hof_no_elitism = tools.HallOfFame(5)
+
+# Estadísticas
+stats = tools.Statistics(lambda ind: ind.fitness.values)
+stats.register("avg", np.mean)
+stats.register("min", np.min)
+
+# Algoritmo genético sin elitismo
+random.seed(42)
+population_no_elitism = toolbox.population(n=300)
+result_no_elitism, log_no_elitism = algorithms.eaSimple(population_no_elitism, toolbox, cxpb=0.90, mutpb=0.1, ngen=200, 
+                                                       stats=stats, halloffame=hof_no_elitism, verbose=False)
+
+# Extraer la mejor ruta de la versión sin elitismo
+best_route_no_elitism = indices_to_cities(hof_no_elitism[0])
+
+
+
+
+# Hall of Fame para la versión con elitismo
+hof_elitism = tools.HallOfFame(30)
+
+# Algoritmo genético con elitismo
+random.seed(42)
+population_elitism = toolbox.population(n=300)
+result_elitism, log_elitism = algorithms.eaSimple(population_elitism, toolbox, cxpb=0.90, mutpb=0.1, ngen=200, 
+                                                  stats=stats, halloffame=hof_elitism, verbose=False)
+
+# Extraer la mejor ruta de la versión con elitismo
+best_route_elitism = indices_to_cities(hof_elitism[0])
